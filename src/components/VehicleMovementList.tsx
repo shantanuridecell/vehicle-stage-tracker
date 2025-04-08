@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { VehicleMovement } from "@/types/vehicle";
 import {
   Table,
@@ -11,12 +11,25 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search } from "lucide-react";
 
 interface VehicleMovementListProps {
   movements: VehicleMovement[];
 }
 
 const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sourceStageFilter, setSourceStageFilter] = useState<string | null>(null);
+  const [targetStageFilter, setTargetStageFilter] = useState<string | null>(null);
+
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd-MMM-yyyy");
@@ -38,50 +51,134 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
     }
   };
 
+  // Extract unique source and target stages for filters
+  const sourceStages = useMemo(() => {
+    const stages = Array.from(new Set(movements.map(m => m.sourceStage)));
+    return stages.sort();
+  }, [movements]);
+
+  const targetStages = useMemo(() => {
+    const stages = Array.from(new Set(movements.map(m => m.targetStage)));
+    return stages.sort();
+  }, [movements]);
+
+  // Filter movements based on search term and selected filters
+  const filteredMovements = useMemo(() => {
+    return movements.filter(movement => {
+      // Search term filter
+      const searchTermLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        !searchTerm || 
+        movement.licensePlate.toLowerCase().includes(searchTermLower) ||
+        movement.vin.toLowerCase().includes(searchTermLower) ||
+        movement.contractNumber.toLowerCase().includes(searchTermLower) ||
+        movement.comment.toLowerCase().includes(searchTermLower) ||
+        (movement.executedBy && movement.executedBy.toLowerCase().includes(searchTermLower));
+      
+      // Stage filters
+      const matchesSourceStage = !sourceStageFilter || movement.sourceStage === sourceStageFilter;
+      const matchesTargetStage = !targetStageFilter || movement.targetStage === targetStageFilter;
+      
+      return matchesSearch && matchesSourceStage && matchesTargetStage;
+    });
+  }, [movements, searchTerm, sourceStageFilter, targetStageFilter]);
+
   return (
-    <div className="w-full overflow-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>License Plate</TableHead>
-            <TableHead>VIN</TableHead>
-            <TableHead>Contract Number</TableHead>
-            <TableHead>Source Stage</TableHead>
-            <TableHead>Target Stage</TableHead>
-            <TableHead>Date of Movement</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>Comment</TableHead>
-            <TableHead>Execution Date</TableHead>
-            <TableHead>Executed By</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {movements.length === 0 ? (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-10"
+            placeholder="Search license plate, VIN, contract..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-4">
+          <div className="w-full sm:w-48">
+            <Select
+              onValueChange={(value) => setSourceStageFilter(value === "all" ? null : value)}
+              value={sourceStageFilter || "all"}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Source Stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Source Stages</SelectItem>
+                {sourceStages.map(stage => (
+                  <SelectItem key={stage} value={stage}>
+                    {stage}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-full sm:w-48">
+            <Select
+              onValueChange={(value) => setTargetStageFilter(value === "all" ? null : value)}
+              value={targetStageFilter || "all"}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Target Stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Target Stages</SelectItem>
+                {targetStages.map(stage => (
+                  <SelectItem key={stage} value={stage}>
+                    {stage}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+      
+      <div className="w-full overflow-auto">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={10} className="text-center py-4">
-                No vehicle movements found
-              </TableCell>
+              <TableHead>License Plate</TableHead>
+              <TableHead>VIN</TableHead>
+              <TableHead>Contract Number</TableHead>
+              <TableHead>Source Stage</TableHead>
+              <TableHead>Target Stage</TableHead>
+              <TableHead>Date of Movement</TableHead>
+              <TableHead>Action</TableHead>
+              <TableHead>Comment</TableHead>
+              <TableHead>Execution Date</TableHead>
+              <TableHead>Executed By</TableHead>
             </TableRow>
-          ) : (
-            movements.map((movement) => (
-              <TableRow key={movement.id}>
-                <TableCell>{movement.licensePlate}</TableCell>
-                <TableCell>{movement.vin}</TableCell>
-                <TableCell>{movement.contractNumber}</TableCell>
-                <TableCell>{movement.sourceStage}</TableCell>
-                <TableCell>{movement.targetStage}</TableCell>
-                <TableCell>{formatDate(movement.dateOfMovement)}</TableCell>
-                <TableCell>{getActionBadge(movement.action)}</TableCell>
-                <TableCell className="max-w-xs truncate" title={movement.comment}>
-                  {movement.comment}
+          </TableHeader>
+          <TableBody>
+            {filteredMovements.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center py-4">
+                  No vehicle movements found
                 </TableCell>
-                <TableCell>{movement.executionDate ? formatDate(movement.executionDate) : 'N/A'}</TableCell>
-                <TableCell>{movement.executedBy || 'N/A'}</TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              filteredMovements.map((movement) => (
+                <TableRow key={movement.id}>
+                  <TableCell>{movement.licensePlate}</TableCell>
+                  <TableCell>{movement.vin}</TableCell>
+                  <TableCell>{movement.contractNumber}</TableCell>
+                  <TableCell>{movement.sourceStage}</TableCell>
+                  <TableCell>{movement.targetStage}</TableCell>
+                  <TableCell>{formatDate(movement.dateOfMovement)}</TableCell>
+                  <TableCell>{getActionBadge(movement.action)}</TableCell>
+                  <TableCell className="max-w-xs truncate" title={movement.comment}>
+                    {movement.comment}
+                  </TableCell>
+                  <TableCell>{movement.executionDate ? formatDate(movement.executionDate) : 'N/A'}</TableCell>
+                  <TableCell>{movement.executedBy || 'N/A'}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

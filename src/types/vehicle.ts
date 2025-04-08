@@ -13,7 +13,16 @@ export interface VehicleMovement {
   executedBy?: string;
 }
 
-export type VehicleFormData = Omit<VehicleMovement, 'executionDate' | 'executedBy'>;
+export interface VehicleFormData {
+  licensePlate: string;
+  vin: string;
+  contractNumber: string;
+  sourceStage: string;
+  targetStage: string;
+  dateOfMovement: string; // ISO date string
+  action: 'Create' | 'Update' | 'Delete';
+  comment: string;
+}
 
 export interface CSVData {
   'License Plate': string;
