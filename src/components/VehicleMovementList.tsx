@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 
 interface VehicleMovementListProps {
   movements: VehicleMovement[];
@@ -29,6 +29,7 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
   const [searchTerm, setSearchTerm] = useState("");
   const [sourceStageFilter, setSourceStageFilter] = useState<string | null>(null);
   const [targetStageFilter, setTargetStageFilter] = useState<string | null>(null);
+  const [actionFilter, setActionFilter] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     try {
@@ -62,6 +63,12 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
     return stages.sort();
   }, [movements]);
 
+  // Extract unique actions for filter
+  const actions = useMemo(() => {
+    const uniqueActions = Array.from(new Set(movements.map(m => m.action)));
+    return uniqueActions.sort();
+  }, [movements]);
+
   // Filter movements based on search term and selected filters
   const filteredMovements = useMemo(() => {
     return movements.filter(movement => {
@@ -79,9 +86,12 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
       const matchesSourceStage = !sourceStageFilter || movement.sourceStage === sourceStageFilter;
       const matchesTargetStage = !targetStageFilter || movement.targetStage === targetStageFilter;
       
-      return matchesSearch && matchesSourceStage && matchesTargetStage;
+      // Action filter
+      const matchesAction = !actionFilter || movement.action === actionFilter;
+      
+      return matchesSearch && matchesSourceStage && matchesTargetStage && matchesAction;
     });
-  }, [movements, searchTerm, sourceStageFilter, targetStageFilter]);
+  }, [movements, searchTerm, sourceStageFilter, targetStageFilter, actionFilter]);
 
   return (
     <div className="space-y-4">
@@ -90,13 +100,19 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
           <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
             className="pl-10"
-            placeholder="Search license plate, VIN, contract..."
+            placeholder="Search license plate, VIN, contract, executed by..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-4">
-          <div className="w-full sm:w-48">
+        <div className="flex flex-wrap gap-4">
+          <div className="w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-500">Filters:</span>
+            </div>
+          </div>
+          <div className="w-full sm:w-40">
             <Select
               onValueChange={(value) => setSourceStageFilter(value === "all" ? null : value)}
               value={sourceStageFilter || "all"}
@@ -114,7 +130,7 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
               </SelectContent>
             </Select>
           </div>
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-40">
             <Select
               onValueChange={(value) => setTargetStageFilter(value === "all" ? null : value)}
               value={targetStageFilter || "all"}
@@ -127,6 +143,24 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
                 {targetStages.map(stage => (
                   <SelectItem key={stage} value={stage}>
                     {stage}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-full sm:w-40">
+            <Select
+              onValueChange={(value) => setActionFilter(value === "all" ? null : value)}
+              value={actionFilter || "all"}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Actions</SelectItem>
+                {actions.map(action => (
+                  <SelectItem key={action} value={action}>
+                    {action}
                   </SelectItem>
                 ))}
               </SelectContent>
