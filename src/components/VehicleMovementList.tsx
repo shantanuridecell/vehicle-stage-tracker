@@ -21,6 +21,13 @@ import {
 import { Search, Filter, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { getSampleSupplierData } from "@/services/vehicle-service";
 
 interface VehicleMovementListProps {
@@ -196,7 +203,7 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
                   <TableCell>{movement.contractNumber}</TableCell>
                   <TableCell>{movement.sourceStage}</TableCell>
                   <TableCell>{movement.targetStage}</TableCell>
-                  <TableCell>{movement.dateOfMovement}</TableCell>
+                  <TableCell>{formatDate(movement.dateOfMovement)}</TableCell>
                   <TableCell>{getActionBadge(movement.action)}</TableCell>
                   <TableCell className="max-w-[200px] truncate" title={movement.comment}>
                     {movement.comment}
@@ -210,10 +217,10 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
                           <Button 
                             variant="outline" 
                             size="icon" 
-                            className="h-8 w-8 bg-blue-50 hover:bg-blue-100"
+                            className="h-8 w-8 bg-blue-100 hover:bg-blue-200 border border-blue-300"
                             onClick={() => handleShowSupplierData(movement)}
                           >
-                            <Info className="h-4 w-4 text-blue-600" />
+                            <Info className="h-5 w-5 text-blue-700" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -229,43 +236,54 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
         </Table>
       </div>
 
-      {showSupplierDialog && selectedVehicle && supplierData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Supplier Information</h2>
-            <p className="mb-2">
-              <strong>License Plate:</strong> {selectedVehicle.licensePlate}
-            </p>
-            <p className="mb-4">
-              <strong>VIN:</strong> {selectedVehicle.vin}
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.keys(supplierData).map(supplier => (
-                <div key={supplier} className="border rounded-md p-4">
-                  <h3 className="font-semibold capitalize mb-2">{supplier.replace(/([A-Z])/g, ' $1').trim()}</h3>
-                  <dl>
-                    {Object.entries(supplierData[supplier]).map(([key, value]) => (
-                      <div key={key} className="grid grid-cols-2 gap-2 mb-2">
-                        <dt className="text-sm text-gray-600">
-                          {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}:
-                        </dt>
-                        <dd className="text-sm">{String(value)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              ))}
+      <Dialog open={showSupplierDialog} onOpenChange={setShowSupplierDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Supplier Information</DialogTitle>
+          </DialogHeader>
+          
+          {selectedVehicle && supplierData && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 border-b pb-4">
+                <p>
+                  <strong>License Plate:</strong> {selectedVehicle.licensePlate}
+                </p>
+                <p>
+                  <strong>VIN:</strong> {selectedVehicle.vin}
+                </p>
+                <p>
+                  <strong>Contract Number:</strong> {selectedVehicle.contractNumber}
+                </p>
+                <p>
+                  <strong>Current Stage:</strong> {selectedVehicle.targetStage}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.keys(supplierData).map(supplier => (
+                  <div key={supplier} className="border rounded-md p-4">
+                    <h3 className="font-semibold capitalize mb-2">{supplier.replace(/([A-Z])/g, ' $1').trim()}</h3>
+                    <dl>
+                      {Object.entries(supplierData[supplier]).map(([key, value]) => (
+                        <div key={key} className="grid grid-cols-2 gap-2 mb-2">
+                          <dt className="text-sm text-gray-600">
+                            {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}:
+                          </dt>
+                          <dd className="text-sm">{String(value)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ))}
+              </div>
             </div>
-            
-            <div className="mt-6 flex justify-end">
-              <Button onClick={() => setShowSupplierDialog(false)}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setShowSupplierDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

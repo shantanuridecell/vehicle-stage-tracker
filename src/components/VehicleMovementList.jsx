@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import {
   Table,
@@ -15,7 +16,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  InputAdornment
+  InputAdornment,
+  Tooltip
 } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -196,19 +198,21 @@ const VehicleMovementList = ({ movements }) => {
                   <TableCell>{formatDate(movement.executionDate)}</TableCell>
                   <TableCell>{movement.executedBy}</TableCell>
                   <TableCell>
-                    <IconButton 
-                      size="small" 
-                      color="primary" 
-                      onClick={() => handleOpenDialog(movement)}
-                      sx={{ 
-                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(25, 118, 210, 0.2)',
-                        }
-                      }}
-                    >
-                      <InfoIcon fontSize="small" style={{ color: '#1976d2' }} />
-                    </IconButton>
+                    <Tooltip title="View supplier data">
+                      <IconButton 
+                        size="small" 
+                        color="primary" 
+                        onClick={() => handleOpenDialog(movement)}
+                        sx={{ 
+                          backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                          }
+                        }}
+                      >
+                        <InfoIcon fontSize="small" style={{ color: '#1976d2' }} />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))
