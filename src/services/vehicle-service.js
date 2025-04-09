@@ -1,9 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
-// Add UUID as a dependency
-<lov-add-dependency>uuid@latest</lov-add-dependency>
-
 // In-memory storage for vehicle movements
 let vehicleMovements = [];
 
@@ -145,4 +142,3 @@ export const addSupplierData = (id, supplierData) => {
   
   return null;
 };
-

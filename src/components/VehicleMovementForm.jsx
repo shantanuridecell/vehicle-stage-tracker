@@ -20,15 +20,12 @@ import {
   Typography,
   Tabs,
   Tab
-} from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+} from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { supplierFields } from '../types/vehicle';
-
-// Add date picker dependency
-<lov-add-dependency>@mui/x-date-pickers@latest</lov-add-dependency>
 
 const formSchema = z.object({
   licensePlate: z.string().min(1, "License plate is required"),
