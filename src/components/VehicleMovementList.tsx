@@ -19,7 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
+import { getSampleSupplierData } from "@/services/vehicle-service";
 
 interface VehicleMovementListProps {
   movements: VehicleMovement[];
@@ -30,6 +33,9 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
   const [sourceStageFilter, setSourceStageFilter] = useState<string | null>(null);
   const [targetStageFilter, setTargetStageFilter] = useState<string | null>(null);
   const [actionFilter, setActionFilter] = useState<string | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleMovement | null>(null);
+  const [supplierData, setSupplierData] = useState<any>(null);
+  const [showSupplierDialog, setShowSupplierDialog] = useState(false);
 
   const formatDate = (dateString: string) => {
     try {
@@ -50,6 +56,13 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
       default:
         return <Badge>{action}</Badge>;
     }
+  };
+
+  const handleShowSupplierData = (movement: VehicleMovement) => {
+    setSelectedVehicle(movement);
+    // In a real app, this would fetch data from API based on the VIN
+    setSupplierData(getSampleSupplierData(movement.vin));
+    setShowSupplierDialog(true);
   };
 
   // Extract unique source and target stages for filters
@@ -183,12 +196,13 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
               <TableHead>Comment</TableHead>
               <TableHead>Execution Date</TableHead>
               <TableHead>Executed By</TableHead>
+              <TableHead>Info</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredMovements.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-4">
+                <TableCell colSpan={11} className="text-center py-4">
                   No vehicle movements found
                 </TableCell>
               </TableRow>
@@ -207,12 +221,60 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
                   </TableCell>
                   <TableCell>{movement.executionDate ? formatDate(movement.executionDate) : 'N/A'}</TableCell>
                   <TableCell>{movement.executedBy || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => handleShowSupplierData(movement)}
+                    >
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {showSupplierDialog && selectedVehicle && supplierData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Supplier Information</h2>
+            <p className="mb-2">
+              <strong>License Plate:</strong> {selectedVehicle.licensePlate}
+            </p>
+            <p className="mb-4">
+              <strong>VIN:</strong> {selectedVehicle.vin}
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.keys(supplierData).map(supplier => (
+                <div key={supplier} className="border rounded-md p-4">
+                  <h3 className="font-semibold capitalize mb-2">{supplier.replace(/([A-Z])/g, ' $1').trim()}</h3>
+                  <dl>
+                    {Object.entries(supplierData[supplier]).map(([key, value]) => (
+                      <div key={key} className="grid grid-cols-2 gap-2 mb-2">
+                        <dt className="text-sm text-gray-600">
+                          {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}:
+                        </dt>
+                        <dd className="text-sm">{String(value)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <Button onClick={() => setShowSupplierDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
