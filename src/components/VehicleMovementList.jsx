@@ -1,212 +1,199 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { 
+  Box, 
+  Paper,
   Table, 
   TableBody, 
   TableCell, 
+  TableContainer, 
   TableHead, 
-  TableRow, 
-  TableContainer,
-  Paper,
+  TableRow,
+  TablePagination,
   TextField,
-  Box,
+  IconButton,
+  Button,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Grid,
-  Typography,
-  Chip,
-  InputAdornment
+  Stack,
+  Tooltip
 } from '@mui/material';
-import { format } from "date-fns";
+import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import SupplierDataDialog from './SupplierDataDialog';
+import { getSampleSupplierData } from '../services/vehicle-service';
 
 const VehicleMovementList = ({ movements }) => {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sourceStageFilter, setSourceStageFilter] = useState(null);
-  const [targetStageFilter, setTargetStageFilter] = useState(null);
-  const [actionFilter, setActionFilter] = useState(null);
+  const [actionFilter, setActionFilter] = useState("");
+  const [openSupplierDialog, setOpenSupplierDialog] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [supplierData, setSupplierData] = useState(null);
 
-  const formatDate = (dateString) => {
-    try {
-      return format(new Date(dateString), "dd-MMM-yyyy");
-    } catch (e) {
-      return dateString;
-    }
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
   };
 
-  const getActionChip = (action) => {
-    switch (action) {
-      case 'Create':
-        return <Chip label="Create" color="success" />;
-      case 'Update':
-        return <Chip label="Update" color="primary" />;
-      case 'Delete':
-        return <Chip label="Delete" color="error" />;
-      default:
-        return <Chip label={action} />;
-    }
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
-  // Extract unique source and target stages for filters
-  const sourceStages = useMemo(() => {
-    const stages = Array.from(new Set(movements.map(m => m.sourceStage)));
-    return stages.sort();
-  }, [movements]);
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    setPage(0);
+  };
 
-  const targetStages = useMemo(() => {
-    const stages = Array.from(new Set(movements.map(m => m.targetStage)));
-    return stages.sort();
-  }, [movements]);
+  const handleActionFilterChange = (event) => {
+    setActionFilter(event.target.value);
+    setPage(0);
+  };
 
-  // Extract unique actions for filter
-  const actions = useMemo(() => {
-    const uniqueActions = Array.from(new Set(movements.map(m => m.action)));
-    return uniqueActions.sort();
-  }, [movements]);
+  const handleShowSupplierData = (movement) => {
+    setSelectedVehicle(movement);
+    // In a real app, this would fetch data from API based on the VIN
+    setSupplierData(getSampleSupplierData(movement.vin));
+    setOpenSupplierDialog(true);
+  };
 
-  // Filter movements based on search term and selected filters
-  const filteredMovements = useMemo(() => {
-    return movements.filter(movement => {
-      // Search term filter
-      const searchTermLower = searchTerm.toLowerCase();
-      const matchesSearch = 
-        !searchTerm || 
-        movement.licensePlate.toLowerCase().includes(searchTermLower) ||
-        movement.vin.toLowerCase().includes(searchTermLower) ||
-        movement.contractNumber.toLowerCase().includes(searchTermLower) ||
-        movement.comment.toLowerCase().includes(searchTermLower) ||
-        (movement.executedBy && movement.executedBy.toLowerCase().includes(searchTermLower));
-      
-      // Stage filters
-      const matchesSourceStage = !sourceStageFilter || movement.sourceStage === sourceStageFilter;
-      const matchesTargetStage = !targetStageFilter || movement.targetStage === targetStageFilter;
-      
-      // Action filter
-      const matchesAction = !actionFilter || movement.action === actionFilter;
-      
-      return matchesSearch && matchesSourceStage && matchesTargetStage && matchesAction;
-    });
-  }, [movements, searchTerm, sourceStageFilter, targetStageFilter, actionFilter]);
+  const handleCloseSupplierDialog = () => {
+    setOpenSupplierDialog(false);
+  };
+
+  const filteredMovements = movements.filter(movement => {
+    const matchesSearch = searchTerm === "" || 
+      movement.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      movement.vin.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      movement.contractNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      movement.sourceStage.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      movement.targetStage.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (movement.executedBy && movement.executedBy.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesAction = actionFilter === "" || movement.action === actionFilter;
+    
+    return matchesSearch && matchesAction;
+  });
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+    <Box>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
           <TextField
-            fullWidth
-            placeholder="Search license plate, VIN, contract, executed by..."
+            label="Search"
+            variant="outlined"
+            size="small"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
+            placeholder="License plate, VIN, stage..."
+            fullWidth
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
+              startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
             }}
           />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-              <FilterListIcon fontSize="small" sx={{ color: 'text.secondary', mr: 0.5 }} />
-              <Typography variant="body2" color="text.secondary">
-                Filters:
-              </Typography>
-            </Box>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Source Stage</InputLabel>
-              <Select
-                value={sourceStageFilter || ""}
-                label="Source Stage"
-                onChange={(e) => setSourceStageFilter(e.target.value || null)}
-              >
-                <MenuItem value="">All Source Stages</MenuItem>
-                {sourceStages.map(stage => (
-                  <MenuItem key={stage} value={stage}>{stage}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Target Stage</InputLabel>
-              <Select
-                value={targetStageFilter || ""}
-                label="Target Stage"
-                onChange={(e) => setTargetStageFilter(e.target.value || null)}
-              >
-                <MenuItem value="">All Target Stages</MenuItem>
-                {targetStages.map(stage => (
-                  <MenuItem key={stage} value={stage}>{stage}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Action</InputLabel>
-              <Select
-                value={actionFilter || ""}
-                label="Action"
-                onChange={(e) => setActionFilter(e.target.value || null)}
-              >
-                <MenuItem value="">All Actions</MenuItem>
-                {actions.map(action => (
-                  <MenuItem key={action} value={action}>{action}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </Grid>
-      </Grid>
-      
+        </Box>
+        
+        <FormControl sx={{ minWidth: 150 }} size="small">
+          <InputLabel>Filter by Action</InputLabel>
+          <Select
+            value={actionFilter}
+            onChange={handleActionFilterChange}
+            label="Filter by Action"
+          >
+            <MenuItem value="">All Actions</MenuItem>
+            <MenuItem value="Create">Create</MenuItem>
+            <MenuItem value="Update">Update</MenuItem>
+            <MenuItem value="Delete">Delete</MenuItem>
+          </Select>
+        </FormControl>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FilterListIcon sx={{ mr: 1 }} />
+          <Button
+            variant="text"
+            onClick={() => {
+              setSearchTerm("");
+              setActionFilter("");
+            }}
+          >
+            Clear Filters
+          </Button>
+        </Box>
+      </Stack>
+
       <TableContainer component={Paper}>
-        <Table size="small">
+        <Table sx={{ minWidth: 650 }} aria-label="vehicle movements table">
           <TableHead>
             <TableRow>
               <TableCell>License Plate</TableCell>
               <TableCell>VIN</TableCell>
-              <TableCell>Contract Number</TableCell>
-              <TableCell>Source Stage</TableCell>
-              <TableCell>Target Stage</TableCell>
-              <TableCell>Date of Movement</TableCell>
+              <TableCell>Contract</TableCell>
+              <TableCell>From</TableCell>
+              <TableCell>To</TableCell>
+              <TableCell>Date</TableCell>
               <TableCell>Action</TableCell>
               <TableCell>Comment</TableCell>
-              <TableCell>Execution Date</TableCell>
               <TableCell>Executed By</TableCell>
+              <TableCell>Info</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredMovements.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
-                  No vehicle movements found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredMovements.map((movement) => (
+            {filteredMovements
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((movement) => (
                 <TableRow key={movement.id}>
                   <TableCell>{movement.licensePlate}</TableCell>
                   <TableCell>{movement.vin}</TableCell>
                   <TableCell>{movement.contractNumber}</TableCell>
                   <TableCell>{movement.sourceStage}</TableCell>
                   <TableCell>{movement.targetStage}</TableCell>
-                  <TableCell>{formatDate(movement.dateOfMovement)}</TableCell>
-                  <TableCell>{getActionChip(movement.action)}</TableCell>
-                  <TableCell 
-                    sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title={movement.comment}
-                  >
-                    {movement.comment}
+                  <TableCell>{new Date(movement.dateOfMovement).toLocaleDateString()}</TableCell>
+                  <TableCell>{movement.action}</TableCell>
+                  <TableCell>{movement.comment}</TableCell>
+                  <TableCell>{movement.executedBy || "N/A"}</TableCell>
+                  <TableCell>
+                    <Tooltip title="Show Supplier Information">
+                      <IconButton 
+                        size="small"
+                        onClick={() => handleShowSupplierData(movement)}
+                      >
+                        <InfoIcon />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
-                  <TableCell>{movement.executionDate ? formatDate(movement.executionDate) : 'N/A'}</TableCell>
-                  <TableCell>{movement.executedBy || 'N/A'}</TableCell>
                 </TableRow>
-              ))
+              ))}
+            {filteredMovements.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={10} align="center">
+                  No vehicle movements found.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
+      
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25]}
+        component="div"
+        count={filteredMovements.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+
+      <SupplierDataDialog 
+        open={openSupplierDialog}
+        onClose={handleCloseSupplierDialog}
+        vehicleData={selectedVehicle}
+        supplierData={supplierData}
+      />
     </Box>
   );
 };
