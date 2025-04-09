@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import {
   Table,
@@ -44,7 +43,6 @@ const VehicleMovementList = ({ movements }) => {
     setShowDialog(false);
   };
 
-  // Format date strings
   const formatDate = (dateString) => {
     try {
       return new Date(dateString).toLocaleString();
@@ -53,7 +51,6 @@ const VehicleMovementList = ({ movements }) => {
     }
   };
 
-  // Get unique values for filters
   const sourceStages = useMemo(() => {
     return [...new Set(movements.map(m => m.sourceStage))].filter(Boolean);
   }, [movements]);
@@ -66,7 +63,6 @@ const VehicleMovementList = ({ movements }) => {
     return [...new Set(movements.map(m => m.action))].filter(Boolean);
   }, [movements]);
 
-  // Apply filters
   const filteredMovements = useMemo(() => {
     return movements.filter(movement => {
       const matchesSearch = searchTerm ? 
@@ -83,7 +79,6 @@ const VehicleMovementList = ({ movements }) => {
     });
   }, [movements, searchTerm, sourceStageFilter, targetStageFilter, actionFilter]);
   
-  // Get status color based on action
   const getActionChipColor = (action) => {
     switch(action) {
       case 'Create': return 'success';
@@ -205,8 +200,14 @@ const VehicleMovementList = ({ movements }) => {
                       size="small" 
                       color="primary" 
                       onClick={() => handleOpenDialog(movement)}
+                      sx={{ 
+                        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                        }
+                      }}
                     >
-                      <InfoIcon fontSize="small" />
+                      <InfoIcon fontSize="small" style={{ color: '#1976d2' }} />
                     </IconButton>
                   </TableCell>
                 </TableRow>

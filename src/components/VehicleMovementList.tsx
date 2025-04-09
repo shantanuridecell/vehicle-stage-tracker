@@ -208,12 +208,12 @@ const VehicleMovementList: React.FC<VehicleMovementListProps> = ({ movements }) 
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="icon" 
-                            className="h-8 w-8"
+                            className="h-8 w-8 bg-blue-50 hover:bg-blue-100"
                             onClick={() => handleShowSupplierData(movement)}
                           >
-                            <Info className="h-4 w-4" />
+                            <Info className="h-4 w-4 text-blue-600" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
