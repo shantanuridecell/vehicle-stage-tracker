@@ -6,11 +6,15 @@ import {
   Card, 
   CardContent, 
   CardHeader,
-  Tabs,
-  Tab,
-  Alert,
-  Snackbar
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Button,
+  Snackbar,
+  Alert
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import Header from "@/components/Header";
 import VehicleMovementList from "@/components/VehicleMovementList";
 import VehicleMovementForm from "@/components/VehicleMovementForm";
@@ -19,7 +23,7 @@ import { getVehicleMovements, addVehicleMovement, addBulkVehicleMovements } from
 
 const Index = () => {
   const [movements, setMovements] = useState(getVehicleMovements());
-  const [tabValue, setTabValue] = useState(0);
+  const [openDialog, setOpenDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -34,6 +38,7 @@ const Index = () => {
       message: 'Vehicle movement added successfully!',
       severity: 'success'
     });
+    setOpenDialog(false);
   };
 
   const handleCSVUpload = (data) => {
@@ -44,10 +49,6 @@ const Index = () => {
       message: `${newMovements.length} vehicle movements imported successfully!`,
       severity: 'success'
     });
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
   };
 
   const handleCloseSnackbar = () => {
@@ -62,35 +63,39 @@ const Index = () => {
       <Header />
       
       <Container sx={{ py: 4, mt: 4 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Vehicle Movements" />
-          <Tab label="Add Movement" />
-        </Tabs>
-        
-        {tabValue === 0 && (
-          <Card sx={{ mt: 2 }}>
-            <CardHeader 
-              title="Vehicle Movement History"
-              subheader="Track all vehicle movements between stages"
-              action={<CSVUpload onUpload={handleCSVUpload} />}
-            />
-            <CardContent>
-              <VehicleMovementList movements={movements} />
-            </CardContent>
-          </Card>
-        )}
-        
-        {tabValue === 1 && (
-          <Card sx={{ mt: 2 }}>
-            <CardHeader 
-              title="Add Vehicle Movement"
-              subheader="Move a vehicle from one stage to another"
-            />
-            <CardContent>
-              <VehicleMovementForm onSubmit={handleAddMovement} />
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader 
+            title="Manual Vehicle Movement History"
+            action={
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <CSVUpload onUpload={handleCSVUpload} />
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  startIcon={<AddIcon />}
+                  onClick={() => setOpenDialog(true)}
+                >
+                  Add Movement
+                </Button>
+              </Box>
+            }
+          />
+          <CardContent>
+            <VehicleMovementList movements={movements} />
+          </CardContent>
+        </Card>
+
+        <Dialog 
+          open={openDialog} 
+          onClose={() => setOpenDialog(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Add Vehicle Movement</DialogTitle>
+          <DialogContent>
+            <VehicleMovementForm onSubmit={handleAddMovement} />
+          </DialogContent>
+        </Dialog>
       </Container>
 
       <Snackbar 

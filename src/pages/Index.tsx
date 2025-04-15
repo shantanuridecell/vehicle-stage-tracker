@@ -6,15 +6,25 @@ import VehicleMovementForm from "@/components/VehicleMovementForm";
 import CSVUpload from "@/components/CSVUpload";
 import { VehicleFormData, VehicleMovement } from "@/types/vehicle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getVehicleMovements, addVehicleMovement, addBulkVehicleMovements } from "@/services/vehicle-service";
+import { useToast } from "@/hooks/use-toast";
+import { Plus } from "lucide-react";
 
 const Index = () => {
   const [movements, setMovements] = useState<VehicleMovement[]>(getVehicleMovements());
+  const [openDialog, setOpenDialog] = useState(false);
+  const { toast } = useToast();
 
   const handleAddMovement = (formData: VehicleFormData) => {
     const newMovement = addVehicleMovement(formData);
     setMovements([newMovement, ...movements]);
+    toast({
+      title: "Success",
+      description: "Vehicle movement added successfully",
+    });
+    setOpenDialog(false);
   };
 
   const handleCSVUpload = (data: VehicleMovement[]) => {
@@ -27,43 +37,32 @@ const Index = () => {
       <Header />
       
       <main className="container mx-auto p-4 mt-4">
-        <Tabs defaultValue="list">
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
-            <TabsTrigger value="list">Vehicle Movements</TabsTrigger>
-            <TabsTrigger value="add">Add Movement</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="list" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vehicle Movement History</CardTitle>
-                <CardDescription>
-                  Track all vehicle movements between stages
-                </CardDescription>
-                <div className="mt-4">
-                  <CSVUpload onUpload={handleCSVUpload} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <VehicleMovementList movements={movements} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="add" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add Vehicle Movement</CardTitle>
-                <CardDescription>
-                  Move a vehicle from one stage to another
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <VehicleMovementForm onSubmit={handleAddMovement} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Manual Vehicle Movement History</CardTitle>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CSVUpload onUpload={handleCSVUpload} />
+              <Button onClick={() => setOpenDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Movement
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <VehicleMovementList movements={movements} />
+          </CardContent>
+        </Card>
+
+        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+          <DialogContent className="sm:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle>Add Vehicle Movement</DialogTitle>
+            </DialogHeader>
+            <VehicleMovementForm onSubmit={handleAddMovement} />
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
